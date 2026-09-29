@@ -1,0 +1,24 @@
+"""
+URL configuration for CareerLens project.
+"""
+
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    
+    # API v1 routes
+    path('api/v1/auth/', include('apps.accounts.urls')),
+    path('api/v1/resumes/', include('apps.resumes.urls')),
+    path('api/v1/jobs/', include('apps.jobs.urls')),
+    path('api/v1/analyses/', include('apps.resumes.analysis_urls')),
+    path('api/v1/applications/', include('apps.applications.urls')),
+    path('api/v1/analytics/', include('apps.analytics.urls')),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

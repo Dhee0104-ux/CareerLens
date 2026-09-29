@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: careerlens_db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-careerlens_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-careerlens_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: careerlens_backend
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-careerlens-production-secret-key-change-me-xyz123}
+      - DEBUG=${DEBUG:-False}
+      - ALLOWED_HOSTS=backend,localhost,127.0.0.1,0.0.0.0,frontend
+      - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:5173,http://localhost:80
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=${DB_NAME:-careerlens_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - MAX_UPLOAD_SIZE_MB=5
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: careerlens_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  media_data:
+  static_data:
